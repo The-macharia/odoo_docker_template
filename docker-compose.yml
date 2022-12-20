@@ -1,0 +1,37 @@
+version: '2'
+services:
+   db:
+        image: postgres:15
+        restart: always
+        environment:
+                - POSTGRES_USER=odoo
+                - POSTGRES_PASSWORD=hqd8^QDgh#WW
+                - POSTGRES_DB=postgres
+                - PGDATA=/var/lib/postgresql/data/pgdata
+        ports:
+                - 51514:5432
+        volumes:
+                - db-data:/var/lib/postgresql/data/pgdata
+        networks:
+                - odoo
+   odoo:        
+        image: odoo:15.0
+        restart: always
+        ports:
+                - 8015:8069
+                - 8014:8072
+        links:
+                - db:db
+        depends_on:
+                - db
+        volumes:
+                - ./config:/etc/odoo
+                - odoo-data:/var/lib/odoo
+        networks:
+                - odoo
+
+volumes:
+        odoo-data:
+        db-data:
+networks:
+        odoo:

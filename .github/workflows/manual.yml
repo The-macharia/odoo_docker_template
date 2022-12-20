@@ -1,0 +1,39 @@
+# This is a basic workflow that is manually triggered
+
+name: Upgrade Module
+# Controls when the action will run. Workflow runs when manually triggered using the UI or API.
+on:
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      db:
+          description: 'Database To Upgrade on'
+          default: 'payments'
+          required: true
+      name:
+        # Friendly description to be shown in the UI instead of 'name'
+        description: 'Module to upgrade'
+        default: 'all'
+        required: true
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "greet"
+  upgrade:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Runs a single command using the runners shell
+    - name: "Upgrading module ${{ github.event.inputs.name }} on db ${{ github.event.inputs.db }}"
+      uses: appleboy/ssh-action@master
+      env:
+        HOST: ${{secrets.SSH_HOST}} # IP address of the server you wish to ssh into
+        USERNAME: ${{secrets.SSH_USERNAME}} # User of the server you want to ssh into
+        KEY: ${{secrets.SSH_KEY}}
+        PORT: ${{secrets.SSH_PORT}} # SSH server port
+      with:
+        script_stop: true # Will stop build incase of any failures
+        script: |
+          docker run --rm --net {docker_network} --link {docker_db}:db mwiti:15.0 odoo -d ${{ github.event.inputs.db }} -u ${{ github.event.inputs.name }} --no-http --stop

@@ -1,0 +1,2 @@
+openpyxl
+html2text

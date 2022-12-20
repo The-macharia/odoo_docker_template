@@ -1,0 +1,17 @@
+FROM odoo:15.0
+USER root
+ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
+
+RUN apt-get update
+RUN pip3 install -U pip
+
+RUN rm -rf /usr/lib/python3/dist-packages/odoo
+RUN mkdir /usr/lib/python3/dist-packages/odoo
+COPY ./enterprise/odoo /usr/lib/python3/dist-packages/odoo
+
+COPY ./custom-addons /mnt/extra-addons
+COPY ./requirements.txt /mnt/extra-addons
+
+RUN pip3 install -r /mnt/extra-addons/requirements.txt --no-cache-dir
+
+USER odoo
