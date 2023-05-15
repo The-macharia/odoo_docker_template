@@ -1,7 +1,8 @@
-version: '2'
+version: '3.7'
 services:
    db:
         image: postgres:15
+        container_name: odoo_db
         restart: always
         environment:
                 - POSTGRES_USER=odoo
@@ -9,24 +10,40 @@ services:
                 - POSTGRES_DB=postgres
                 - PGDATA=/var/lib/postgresql/data/pgdata
         ports:
-                - 51514:5432
+                - "51514:5432"
         volumes:
                 - db-data:/var/lib/postgresql/data/pgdata
         networks:
                 - odoo
    odoo:        
-        image: odoo:15.0
+        image: odoo:16.0
+        container_name: odoo
         restart: always
         ports:
-                - 8015:8069
-                - 8014:8072
+                - "8016:8069"
+                - "8017:8072"
         links:
-                - db:db
+                - "db:db"
         depends_on:
                 - db
         volumes:
                 - ./config:/etc/odoo
                 - odoo-data:/var/lib/odoo
+        networks:
+                - odoo
+   nginx:
+        image: nginx:latest
+        container_name: odoo_nginx
+        restart: always
+        ports:
+                - "80:80"
+                - "443:443"
+        restart: always
+        depends_on:
+                - odoo
+        volumes:
+                - ./nginx/sites-enabled/:/etc/nginx/conf.d:ro
+                - /etc/letsencrypt:/etc/letsencrypt:ro
         networks:
                 - odoo
 

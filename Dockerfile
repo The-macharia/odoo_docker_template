@@ -1,4 +1,4 @@
-FROM odoo-base:15.0
+FROM odoo-base:16.0
 USER odoo
 
 COPY requirements.txt mnt/extra-addons
