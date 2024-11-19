@@ -1,0 +1,30 @@
+name: Server Maintenance 
+on: 
+  workflow_dispatch:
+    
+  schedule:
+      - cron: "0 0/6 * * *"
+
+
+jobs:
+  clear-dangling-volumes:
+    runs-on: self-hosted
+    outputs:
+      has-dangling-volumes: ${{ steps.check.outputs.has_dangling_volumes }}
+    steps:
+      - name: "List Dangling Volumes"
+        id: check
+        run: |
+          docker volume ls -qf dangling=true | grep -ivE "odoo|db"
+          if [ $? -eq 0 ] 
+          then
+            echo "has_dangling_volumes=$(echo $?)" >> $GITHUB_OUTPUT
+          else
+            echo "has_dangling_volumes=$(echo $?)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: "Clear Dangling Volumes"
+        if: steps.check.outputs.has_dangling_volumes == '0'
+        run: docker volume rm $(docker volume ls -qf dangling=true | grep -ivE "odoo|db")
+        env:
+          has_dangling_volumes: '1'

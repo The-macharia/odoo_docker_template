@@ -1,0 +1,1 @@
+# Any extra addons from odoo apps

@@ -1,0 +1,22 @@
+name: Restart Services
+on:
+  workflow_dispatch:
+
+
+jobs:
+  restart-prod:
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Restarting Prod Server
+      run: |
+        cd /home/odoo/odoo && docker compose down && docker compose up -d
+
+  restart-stage:
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/stage'
+    steps:
+    - name: Restarting Stage Server
+      run: |
+        cd /home/odoo/stage && docker compose down && docker compose up -d
+        

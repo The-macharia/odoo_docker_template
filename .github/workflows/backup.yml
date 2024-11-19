@@ -1,0 +1,39 @@
+name: Database Backup
+on:
+  schedule:
+    - cron: "15 10,21 * * *"
+
+  workflow_dispatch:
+    inputs:
+      db:
+        description: 'Database To Backup'
+        default: 'live'
+        required: true
+        
+env:
+  BACKUP_DIR: "/home/odoo/backups"
+  BACKUP_DB:  ${{ github.event.inputs.db || vars.MAIN_DB}}
+  CONTAINER_BACKUP_DIR: "/var/backups"
+  ODOO_VOLUME: "odoo_odoo-data"
+  ODOO_NET: "odoo_odoo"
+
+jobs:
+  main-backup:
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: "Create Backup Dir If no exists"
+        run: |
+          mkdir -p $BACKUP_DIR
+  
+      - name: "Production: Taking DB Backup"
+        run: |
+          docker run --rm --net $ODOO_NET -v $ODOO_VOLUME:/var/lib/odoo -v $BACKUP_DIR:$CONTAINER_BACKUP_DIR -iu root --link db:db ${{vars.ODOO_IMAGE}} click-odoo-backupdb -c /etc/odoo/odoo.conf $BACKUP_DB $CONTAINER_BACKUP_DIR/$BACKUP_DB.$(date +%F-%H-%M-%S-%p).zip
+  
+      - name: "Delete Backups Older Than 4 Days"
+        run: |
+          find $BACKUP_DIR -type f -mtime +4 -name "$BACKUP_DB.*.zip" -delete
+          
+      - name: "List Backups"
+        run: |
+          ls -lh $BACKUP_DIR

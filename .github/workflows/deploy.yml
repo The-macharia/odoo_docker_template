@@ -1,22 +1,42 @@
-name: Push & Deploy
+name: Deploy Code
 on:
   push:
-    branches: [main]
+    branches: [ "main", "stage" ]
+
+permissions:
+  contents: read
+  
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  deploy-prod:
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy With Latest Code
-        uses: appleboy/ssh-action@master
-        env:
-          HOST: ${{secrets.SSH_HOST}} # IP address of the server you wish to ssh into
-          USERNAME: ${{secrets.SSH_USERNAME}} # User of the server you want to ssh into
-          # PASSWORD: ${{secrets.SSH_PASSWORD}} # SSH server user password
-          KEY: ${{secrets.SSH_KEY}}
-          PORT: ${{secrets.SSH_PORT}} # SSH server port
-        with:
-          script_stop: true # Will stop build incase of any failures
-          script: |
-            cd /home/odoo/odoo
-            sh scripts/update_server.sh
+    - name: Pull Updated Code
+      run: |
+        cd /home/odoo/odoo && git pull origin main
+
+    - name: Updating Prod Server
+      run: |
+        cd /home/odoo/odoo && export ODOO_IMAGE=prod && sh scripts/update_server.sh
+
+    - name: Upgrade Addons
+      run: |
+        docker run --rm --net odoo_odoo -v odoo_odoo-data:/var/lib/odoo -iu root --link db:db ${{vars.ODOO_IMAGE}} click-odoo-update -c /etc/odoo/odoo.conf -d ${{vars.MAIN_DB}}
+
+  deploy-stage:
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/stage'
+    steps:
+    - name: Pull Updated Code
+      run: |
+        cd /home/odoo/stage && git pull origin stage
+
+    - name: Updating Stage Server
+      run: |
+        cd /home/odoo/stage && export ODOO_IMAGE=stage && sh scripts/update_server.sh
+
+    - name: Upgrade Addons
+      run: |
+        docker run --rm --net stage_odoo -v stage_odoo-data:/var/lib/odoo -iu root --link stage_db:db ${{vars.ODOO_STAGE_IMAGE}} click-odoo-update -c /etc/odoo/odoo.conf -d ${{vars.STAGE_DB}}
+      
